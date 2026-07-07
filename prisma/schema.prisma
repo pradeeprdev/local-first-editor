@@ -1,0 +1,95 @@
+// Prisma schema for the Local-First Collaborative Editor
+// Run: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  passwordHash  String
+  createdAt     DateTime @default(now())
+
+  collaborations Collaborator[]
+  versionsMade   DocumentVersion[]
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  // Canonical CRDT state, stored as base64-encoded Yjs update (merged snapshot).
+  // This is authoritative on the SERVER only for computing new snapshots/versions;
+  // the CLIENT's IndexedDB copy is the source of truth for the UI (local-first).
+  state       Bytes?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  collaborators Collaborator[]
+  updates       DocumentUpdate[]
+  versions      DocumentVersion[]
+
+  @@index([updatedAt])
+}
+
+// Row-level tenant scoping: every query for a Document MUST go through
+// a Collaborator row for the requesting user (see src/lib/authz.ts).
+// This is our "strict ORM scoping" approach; prisma/rls.sql has the
+// equivalent native Postgres RLS policy as a bonus/alternative.
+model Collaborator {
+  id         String   @id @default(cuid())
+  role       Role
+  userId     String
+  documentId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  document Document @relation(fields: [documentId], references: [id])
+
+  @@unique([userId, documentId])
+  @@index([documentId])
+}
+
+// Append-only log of Yjs binary updates (the CRDT "diffs"). This is the
+// sync engine's queue: clients push their offline updates here, and pull
+// any updates with id > their last-seen cursor. Because Yjs updates are
+// commutative + idempotent, replay order does not matter (deterministic
+// conflict resolution "for free" from the CRDT).
+model DocumentUpdate {
+  id         Int      @id @default(autoincrement())
+  documentId String
+  update     Bytes
+  clientId   String
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id])
+
+  @@index([documentId, id])
+}
+
+// Explicit named snapshots ("Save version") for time-travel / history UI.
+model DocumentVersion {
+  id         String   @id @default(cuid())
+  documentId String
+  label      String
+  state      Bytes
+  createdAt  DateTime @default(now())
+  createdBy  String
+
+  document Document @relation(fields: [documentId], references: [id])
+  author   User     @relation(fields: [createdBy], references: [id])
+
+  @@index([documentId, createdAt])
+}
