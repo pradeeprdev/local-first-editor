@@ -2,7 +2,94 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
+:root {
+  --color-paper: #f2f0ea;
+  --color-paper-raised: #fbfaf7;
+  --color-ink: #1b1f1d;
+  --color-hairline: #dedbd2;
+  --color-plum: #6e2a52;
+  --color-plum-dark: #551f3f;
+  --color-sage: #4f7a63;
+  --color-brick: #a8402a;
+}
+
 body {
-  height: 100%;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-serif), Georgia, serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+.bg-paper {
+  background-color: var(--color-paper);
+}
+
+.bg-paper-raised {
+  background-color: var(--color-paper-raised);
+}
+
+.text-ink {
+  color: var(--color-ink);
+}
+
+.border-hairline {
+  border-color: var(--color-hairline);
+}
+
+.text-plum {
+  color: var(--color-plum);
+}
+
+.bg-plum {
+  background-color: var(--color-plum);
+}
+
+.bg-plum-dark {
+  background-color: var(--color-plum-dark);
+}
+
+.text-sage {
+  color: var(--color-sage);
+}
+
+.bg-sage {
+  background-color: var(--color-sage);
+}
+
+.text-brick {
+  color: var(--color-brick);
+}
+
+/* sync-pulse: the signature element — a small breathing dot suggesting
+   live local-first sync state, used next to the wordmark and doc titles */
+@keyframes sync-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.82);
+  }
+}
+
+.sync-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background-color: var(--color-sage);
+  animation: sync-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sync-dot {
+    animation: none;
+  }
 }

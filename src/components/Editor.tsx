@@ -15,6 +15,7 @@ export default function Editor({
   const [text, setText] = useState("");
   const [status, setStatus] = useState<SyncStatus>("offline");
   const [ready, setReady] = useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const docRef = useRef<LocalFirstDocument | null>(null);
   const applyingRemoteRef = useRef(false);
   const readOnly = role === "VIEWER";
@@ -69,11 +70,14 @@ export default function Editor({
     if (!lfd) return;
     const label = window.prompt("Name this version (e.g. 'Before rewrite'):");
     if (!label) return;
-    await fetch(`/api/documents/${documentId}/versions`, {
+    const res = await fetch(`/api/documents/${documentId}/versions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ label, state: lfd.encodeFullState() }),
     });
+    // Tell VersionHistory to refetch now that a new snapshot exists — without
+    // this, the sidebar only ever reflects what was there when it mounted.
+    if (res.ok) setHistoryRefreshKey((k) => k + 1);
   }
 
   async function restoreVersion(versionId: string) {
@@ -82,15 +86,19 @@ export default function Editor({
   }
 
   return (
-    <div className="flex h-full gap-6">
-      <div className="flex-1 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
+    // h-full + min-h-0 so this fills whatever height the page gives it
+    // instead of growing to fit its content and pushing the page taller.
+    <div className="flex h-full min-h-0 gap-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <div className="flex shrink-0 items-center justify-between">
           <ConnectionStatus status={status} />
           <span className="text-xs uppercase tracking-wide text-gray-500">{role}</span>
         </div>
         <textarea
           aria-label="Document content"
-          className="flex-1 min-h-[60vh] w-full resize-none rounded-lg border border-gray-300 p-4 font-mono text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+          // No min-h-[60vh]: that fixed height was fighting the flex layout
+          // and forcing the column past the viewport on smaller screens.
+          className="w-full min-h-0 flex-1 resize-none rounded-lg border border-gray-300 p-4 font-mono text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
           value={text}
           onChange={handleChange}
           disabled={readOnly || !ready}
@@ -99,7 +107,7 @@ export default function Editor({
         {!readOnly && (
           <button
             onClick={saveVersion}
-            className="self-start rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="shrink-0 self-start rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             Save version snapshot
           </button>
@@ -109,6 +117,7 @@ export default function Editor({
         documentId={documentId}
         canRestore={!readOnly}
         onRestore={restoreVersion}
+        refreshKey={historyRefreshKey}
       />
     </div>
   );

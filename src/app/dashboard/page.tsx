@@ -16,24 +16,37 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Your documents</h1>
+    <div className="mx-auto w-full max-w-3xl px-6 py-10">
+      <div className="mb-10 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="sync-dot" aria-hidden />
+          <h1 className="font-display text-2xl font-medium text-ink">Your documents</h1>
+        </div>
         <LogoutButton />
       </div>
 
       <NewDocumentForm />
 
-      <ul className="mt-8 divide-y divide-gray-100 rounded-lg border border-gray-100">
+      <ul className="mt-8 divide-y divide-hairline overflow-hidden rounded-lg border border-hairline bg-paper-raised">
         {docs.length === 0 && (
-          <li className="p-4 text-sm text-gray-500">No documents yet — create one above.</li>
+          <li className="px-4 py-8 text-center text-sm text-ink/45">
+            Nothing here yet — create your first document above.
+          </li>
         )}
         {docs.map((c) => (
-          <li key={c.document.id} className="flex items-center justify-between p-4">
-            <Link href={`/documents/${c.document.id}`} className="font-medium text-blue-600 hover:underline">
+          <li
+            key={c.document.id}
+            className="flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-paper"
+          >
+            <Link
+              href={`/documents/${c.document.id}`}
+              className="font-display text-base text-ink transition-colors hover:text-plum"
+            >
               {c.document.title}
             </Link>
-            <span className="text-xs uppercase tracking-wide text-gray-400">{c.role}</span>
+            <span className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-ink/45">
+              {c.role}
+            </span>
           </li>
         ))}
       </ul>

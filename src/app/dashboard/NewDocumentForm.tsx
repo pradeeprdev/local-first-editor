@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 export default function NewDocumentForm() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -20,23 +21,28 @@ export default function NewDocumentForm() {
     setBusy(false);
     if (res.ok) {
       const doc = await res.json();
-      router.push(`/documents/${doc.id}`);
+      startTransition(() => router.push(`/documents/${doc.id}`));
     }
   }
+
+  const pending = busy || isPending;
 
   return (
     <form onSubmit={submit} className="flex gap-2">
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="New document title"
-        className="flex-1 rounded-md border border-gray-300 px-3 py-2"
+        placeholder="Untitled document"
+        className="flex-1 rounded-md border border-hairline bg-paper-raised px-3 py-2.5 text-sm text-ink placeholder:text-ink/30 outline-none transition-colors focus:border-plum focus:ring-2 focus:ring-plum/15"
       />
       <button
-        disabled={busy}
-        className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        disabled={pending}
+        className="flex items-center gap-2 whitespace-nowrap rounded-md bg-plum px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-plum-dark disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Create
+        {pending && (
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+        )}
+        {pending ? "Creating…" : "Create"}
       </button>
     </form>
   );
